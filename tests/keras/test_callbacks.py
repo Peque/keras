@@ -201,6 +201,21 @@ def test_ModelCheckpoint(tmpdir):
     os.remove(filepath.format(epoch=4))
     assert not tmpdir.listdir()
 
+    # case 6 (ignore_first)
+    filepath = str(tmpdir / 'checkpoint.{epoch:02d}.h5')
+    cbks = [callbacks.ModelCheckpoint(filepath, monitor=monitor,
+                                      save_best_only=False, mode='auto',
+                                      period=1, ignore_first=4)]
+    model.fit(X_train, y_train, batch_size=batch_size,
+              validation_data=(X_test, y_test), callbacks=cbks, epochs=6)
+    assert os.path.isfile(filepath.format(epoch=5))
+    assert os.path.isfile(filepath.format(epoch=6))
+    for i in range(1, 6):
+        assert not os.path.exists(filepath.format(epoch=i))
+    os.remove(filepath.format(epoch=5))
+    os.remove(filepath.format(epoch=6))
+    assert not tmpdir.listdir()
+
 
 @keras_test
 def test_EarlyStopping():

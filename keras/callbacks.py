@@ -356,11 +356,13 @@ class ModelCheckpoint(Callback):
             saved (`model.save_weights(filepath)`), else the full model
             is saved (`model.save(filepath)`).
         period: Interval (number of epochs) between checkpoints.
+        ignore_first: Number of epochs to ignore before start monitoring.
+            Can be used to ignore noise during the first epochs.
     """
 
     def __init__(self, filepath, monitor='val_loss', verbose=0,
                  save_best_only=False, save_weights_only=False,
-                 mode='auto', period=1):
+                 mode='auto', period=1, ignore_first=0):
         super(ModelCheckpoint, self).__init__()
         self.monitor = monitor
         self.verbose = verbose
@@ -368,6 +370,7 @@ class ModelCheckpoint(Callback):
         self.save_best_only = save_best_only
         self.save_weights_only = save_weights_only
         self.period = period
+        self.ignore_first = ignore_first
         self.epochs_since_last_save = 0
 
         if mode not in ['auto', 'min', 'max']:
@@ -393,6 +396,8 @@ class ModelCheckpoint(Callback):
     def on_epoch_end(self, epoch, logs=None):
         logs = logs or {}
         self.epochs_since_last_save += 1
+        if self.ignore_first >= epoch:
+            return
         if self.epochs_since_last_save >= self.period:
             self.epochs_since_last_save = 0
             filepath = self.filepath.format(epoch=epoch + 1, **logs)
